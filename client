@@ -1,0 +1,42 @@
+/////客户端程序
+#include<WinSock2.h>
+#include <iostream>
+using namespace std;
+
+int main()
+{
+//1.加载socket库
+	WORD wVersionR=MAKEWORD(1,1);
+	WSADATA wsadata;
+	if(WSAStartup(wVersionR,&wsadata))
+	{
+		return 0;
+	}
+	if (LOBYTE(wsadata.wVersion)!=1 || HIBYTE(wsadata.wVersion)!=1)
+	{
+		WSACleanup();
+		return 0;
+	}
+//2.创建套接字
+	SOCKET socklient=socket(AF_INET,SOCK_STREAM,0);
+
+//3.向服务器发出连接请求
+	//填写服务器的地址信息
+	SOCKADDR_IN addrsrv;
+	addrsrv.sin_addr.S_un.S_addr=inet_addr("192.168.0.107");//这里设置为你本机的IP地址
+	addrsrv.sin_family=AF_INET;
+	addrsrv.sin_port=htons(6000);
+	connect(socklient,(SOCKADDR *)&addrsrv,sizeof(SOCKADDR));
+
+//4.和服务器间进行通信
+	//接收数据
+	char recvBuff[100];
+	recv(socklient,recvBuff,100,0);
+	cout<<"接收到的数据："<<recvBuff<<endl;
+	//发送数据
+	send(socklient,"hello man！",strlen("hello man！")+1,0);
+
+//5.断开服务器
+	closesocket(socklient);
+	WSACleanup();
+}
