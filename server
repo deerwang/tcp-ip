@@ -1,0 +1,68 @@
+///基于TCP的服务器端的
+#include <WinSock2.h>
+#include <stdio.h>
+#include <iostream>
+using namespace std;
+
+int main()
+{
+	
+//1.加载套接字库
+	WORD wVersionRequseted;//版本库,WORD表示双字节
+	WSADATA wsadata;
+	int err;
+
+	wVersionRequseted=MAKEWORD(1,1);//采用宏来获取版本后，注意主副版本。
+	
+	err=WSAStartup(wVersionRequseted,&wsadata);//返回wsadata
+	if (err!=0)//加载失败
+	{
+		return 0;
+	}
+	if (LOBYTE(wsadata.wVersion)!=1 || HIBYTE(wsadata.wVersion!=1))//检查版本号是否正确
+	{
+		WSACleanup();//释放库
+		return 0;
+	}
+
+//2.创建用于监听的套接字
+	SOCKET  socketSrv=socket(AF_INET,SOCK_STREAM,0);
+
+//3.绑定本地地址和接口
+	//利用sockarr_in函数来填写本地信息
+	SOCKADDR_IN addrSev;//tcp/ip采用SOCKADDR_IN,原型是SOCKADDR。
+	addrSev.sin_addr.S_un.S_addr=htonl(INADDR_ANY);//允许向套接字向本机的ip地址发送信息，如果要指定特定的地址请用inet_addr();
+	addrSev.sin_family=AF_INET;//指定协议簇
+	addrSev.sin_port=htons(6000);//指定端口号
+	bind(socketSrv,(SOCKADDR*)&addrSev,sizeof(SOCKADDR));//绑定信息
+
+//4.设置为监听模式
+	listen(socketSrv,5);//第二个参数表示等待队列的最大长度,如果要最大值则设置为SOMAXCONN.
+
+
+//5.等待客户端的请求
+	//设置一个变量用来记录客户端的地址信息
+	SOCKADDR_IN addrclient;
+	int len=sizeof(SOCKADDR);
+	while (1)//死循环
+	{
+		//接收请求后返回一个建立连接的新的套接字。
+		SOCKET sockconn=accept(socketSrv,(SOCKADDR *)&addrclient,&len);
+		char sendbuff[100];
+		sprintf(sendbuff,"hello,%s",inet_ntoa(addrclient.sin_addr));
+
+
+//6.用返回的新的套接字和客户端通信
+		//发送数据
+		send(sockconn,sendbuff,strlen(sendbuff)+1,0);
+		//接收数据
+		char recvBuf[100];
+		recv(sockconn,recvBuf,100,0);
+		cout<<"接收到的数据是："<<recvBuf<<endl;
+
+
+//7.关闭套接字
+		closesocket(sockconn);
+	}
+	
+}
